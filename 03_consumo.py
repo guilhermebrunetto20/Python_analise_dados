@@ -89,7 +89,7 @@ def index():
 def grafico1():
     with sqlite3.connect(f'{caminho}banco01.bd') as conn:
         df = pd.read_sql_query("""
-             SELECT  country, total_litres_of_pure_alcohol FROM bebidas ORDER BY total_litres_of_pure_alcohol LIMIT 10               
+             SELECT  country, total_litres_of_pure_alcohol FROM bebidas ORDER BY total_litres_of_pure_alcohol DESC LIMIT 10               
         """, conn)
 
     figuraGrafico01 = px.bar(
@@ -122,21 +122,19 @@ def grafico2():
 def grafico3():
     regioes = {
         "Europa":['France','Germany','Spain','Italy','Portugal'],
-        "Asia": ['China','Japan','India','Thailand'],
-        "Africa": ['Angola','Nigeria','Egypt','Algeria'],
-        "Americas": ['USA', 'Canada','Brazil','Argentina','Mexico']
-
+        "Asia":['China','Japan','India','Thailand'],
+        "Africa":['Angola','Nigeria','Egypt','Algeria'],
+        "Americas":['USA','Canada','Brazil','Argentina','Mexico']
     }
     dados = []
     with sqlite3.connect(f'{caminho}banco01.bd') as conn:
-        # Itera sobre o dicionario, de regioes onde cada chave(regiao tem uma lista de paises)
+        # itera sobre o dicionario, de regioes onde cada chave (regiao tem uma lista de paises) 
         for regiao, paises in regioes.items():
-            placeholders = ",".join([f" '{pais} '" for pais in paises])
+            placeholders = ",".join([f"'{pais}'" for pais in paises])
             query = f"""
                 SELECT SUM(total_litres_of_pure_alcohol) AS total
                 FROM bebidas
                 WHERE country IN ({placeholders})
-             
             """
             total = pd.read_sql_query(query, conn).iloc[0,0]
             dados.append({
@@ -148,11 +146,9 @@ def grafico3():
         dfRegioes,
         names = "Região",
         values = "Consumo Total",
-        title = "Consumo Total por Região!"
+        title = "Consumo total por Região!"
     )
-
     return figuraGrafico3.to_html()
-
 
 @app.route('/comparar', methods = ['POST','GET'])
 def comparar():
@@ -290,12 +286,45 @@ input[type="submit"]:hover {
     ''', opcoes = opcoes)
 
 
+@app.route('/ver', methods =['POST', 'GET'])
+def ver_tabela():
+    tabelas = [
+        "bebidas",
+        "vingadores"
+        ]
+    tabela_selecionada = None
+    dados_html = ""
+
+    if request.method == "POST":
+        tabela_selecionada = request.form.get("tabela")
+        if tabela_selecionada in tabelas:
+            with sqlite3.connect(f"{caminho}banco01.bd") as conn:
+                df = pd.read_sql_query(f"SELECT * FROM {tabela_selecionada}", conn)
+                dados_html = df.to_html(classes="table table-striped", index=False)
+        else:
+            dados_html = "<p>Seleção inválida.</p>"
+
+#Código abaixo é para determinar o HTML
+
+    return render_template_string('''
+        <h2>Escolha a tabela abaixo </h2>
+        <form method="POST">
+            <label for="tabela">Escolha a tabela:</label>
+            <select name="tabela">
+                {% for tab in tabelas %}
+                    <option value="{{tab}}">{{tab.title()}}</option>
+                {% endfor %}
+            </select>
+            <input type="submit" value="Ver">
+        </form>
+        <br>
+        {{dados_html|safe}}
+    ''', tabelas=tabelas, dados_html=dados_html)
 
 
 
 
 
- 
 
 
 if __name__ == '__main__':
