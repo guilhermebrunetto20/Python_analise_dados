@@ -154,6 +154,147 @@ def grafico3():
     return figuraGrafico3.to_html()
 
 
+@app.route('/comparar', methods = ['POST','GET'])
+def comparar():
+    opcoes = [
+        'beer_servings',
+        'spirit_servings',
+        'wine_servings'
+    ]
+
+    if request.method == "POST":
+        eixoX = request.form.get('eixo_x')
+        eixoy = request.form.get('eixo_y')
+        if eixoX == eixoy:
+            return "<marquee> Você fez besteira....Escolha tabelas diferentes...</marquee>"
+        
+        conn = sqlite3.connect(f'{caminho}banco01.bd')
+        df = pd.read_sql_query("SELECT country,{},{} FROM bebidas".format(eixoX,eixoy), conn)
+        conn.close()
+        figuraComparar = px.scatter(
+            df,
+            x = eixoX,
+            y = eixoy,
+            title= f"Comparação entre {eixoX} vs {eixoy}"
+        )
+
+        figuraComparar.update_traces(
+            textposition = "top center"
+        )
+
+        return figuraComparar.to_html()
+
+
+
+
+
+    return render_template_string('''
+        <style>
+         /* Estilo geral da página */
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(to right, #e0eafc, #cfdef3);
+    padding: 40px;
+    margin: 0;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    min-height: 100vh;
+}
+
+/* Título principal */
+h2 {
+    text-align: center;
+    font-size: 28px;
+    color: #2c3e50;
+    margin-bottom: 30px;
+}
+
+/* Estilizando o formulário */
+form {
+    background: white;
+    padding: 30px 40px;
+    border-radius: 10px;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+    max-width: 400px;
+    width: 100%;
+}
+
+/* Labels */
+label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 600;
+    color: #34495e;
+    font-size: 15px;
+}
+
+/* Select dropdown */
+select {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 20px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    font-size: 15px;
+    background-color: #f9f9f9;
+    transition: border-color 0.3s;
+}
+
+select:focus {
+    border-color: #3498db;
+    outline: none;
+}
+
+/* Botão de envio */
+input[type="submit"] {
+    width: 100%;
+    background: #3498db;
+    color: white;
+    padding: 12px;
+    font-size: 16px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.3s ease;
+}
+
+input[type="submit"]:hover {
+    background: #2980b9;
+}
+                         
+        </style>                      
+        <h2> Comparar Campos </h2>
+        <form method = "POST">
+            <label for ="eixo_x"> Eixo X: </label>
+            <select name = "eixo_x">
+                {% for opcao in opcoes %}                
+                    <option value ="{{opcao}}"> {{opcao}} </option>
+                {% endfor %}
+                                  
+            </select>
+            <br></br>        
+
+            <label for ="eixo_y"> Eixo Y: </label>
+            <select name = "eixo_y">
+                {% for opcao in opcoes %}
+                    <option value = "{{opcao}}"> {{opcao}} </option>
+                {% endfor %}
+                
+            </select>
+            <br></br>
+                                 
+            <input type = "submit" value = "-- Comparar --">   
+
+        </form>
+    ''', opcoes = opcoes)
+
+
+
+
+
+
+
  
 
 
