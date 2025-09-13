@@ -323,6 +323,48 @@ def ver_tabela():
 
 
 
+@app.route('/upload', methods = ['POST','GET'])
+def upload():
+    if request.method == "POST":
+        recebido = request.files['c_arquivo']
+        if not recebido:
+            return "Nenhum arquivo selecionado"
+        dfAvengers = pd.read_csv(recebido, encoding='latin1')
+        conn=  sqlite3.connect(f"{caminho}banco01.bd")
+        dfAvengers.to_sql("vingadores", conn, if_exists="replace", index=False)
+        conn.commit()
+        conn.close()
+        return "Sucesso! Tabela Vingadores atualizada!"     
+
+
+    return '''
+        <h2> Upload da tabela Avengers </h2>
+        <form method="POST" enctype="multipart/form-data">
+            <input type="file" name="c_arquivo" accept=".csv">
+            <input type="submit" value="Upload">
+        </form>
+    '''
+
+@app.route('/apagar/<nome_tabela>', methods =['GET'])
+def apagarTabela(nome_tabela):
+    conn=  sqlite3.connect(f"{caminho}banco01.bd")
+    #Realiza o apontamento para o banco que será manipulado
+    cursor = conn.cursor()
+    cursor.execute(f"SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name ='{nome_tabela}'")
+    existe = cursor.fetchone()[0]
+    if not existe:
+        conn.close
+        return "Tabela não foi encontrada!"
+    try:
+        cursor.execute(f'DROP TABLE "{nome_tabela}" ')
+        conn.commit()
+        conn.close()
+        return f"Tabela {nome_tabela} apagada com sucesso!"
+
+
+    except Exception as erro:
+        conn.close()
+        return f"Não foi possivel apagar a tabela, erro: {erro}"
 
 
 
